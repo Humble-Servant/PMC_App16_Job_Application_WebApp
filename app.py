@@ -1,6 +1,21 @@
+from datetime import datetime
 from flask import Flask, render_template, request
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+
+app.config['SECRET_KEY'] = "r!GrH9X9$4_@AwgQUTqafA3qSG_t-m9NjA6r_Qn-Gk_GWdWswBFQB!8VE7CAg@NC"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///data.db"
+db = SQLAlchemy(app)
+
+
+class Form(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(80))
+    last_name = db.Column(db.String(80))
+    email = db.Column(db.String(80))
+    date_avail = db.Column(db.Date)
+    occupation = db.Column(db.String(80))
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -9,11 +24,18 @@ def index():
         first_name = request.form["first_name"]
         last_name = request.form["last_name"]
         email = request.form["email"]
-        date_avail = request.form["date_avail"]
+        date_avail = datetime.strptime(request.form["date_avail"], "%Y-%m-%d")
         occupation = request.form["occupation"]
-        # print(f"{last_name}, {first_name}  {email}")
-        # print(f"Date available: {date_avail}")
-        # print(f"Occupation: {occupation}")
+        
+        form = Form(first_name=first_name, last_name=last_name, email=email, date_avail=date_avail,
+                    occupation=occupation)
+        db.session.add(form)
+        db.session.commit()
+
     return render_template("index.html")
 
-app.run(debug=True, port=5001)
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+        app.run(debug=True, port=5001)
